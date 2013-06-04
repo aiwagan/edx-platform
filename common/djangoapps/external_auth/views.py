@@ -193,9 +193,13 @@ def signup(request, eamap=None):
                'extauth_name': eamap.external_name,
                }
 
+    # detect if full name is blank and ask for it from user
+    if eamap.external_name.strip() == '':
+        context['ask_for_fullname'] = True
+
     log.debug('Doing signup for %s' % eamap.external_email)
 
-    return student_views.index(request, extra_context=context)
+    return student_views.register_user(request, extra_context=context)
 
 
 # -----------------------------------------------------------------------------
@@ -302,6 +306,50 @@ def ssl_login(request):
                                     email=email,
                                     fullname=fullname,
                                     retfun=retfun)
+
+
+
+# -----------------------------------------------------------------------------
+# Shibboleth (Stanford and others.  Uses *Apache* environment variables)
+# -----------------------------------------------------------------------------
+def shib_login(request, retfun=None):
+    
+    #Uses Apache's REMOTE_USER environment variable as the external id.
+    #This in turn typically uses EduPersonPrincipalName
+    #http://www.incommonfederation.org/attributesummary.html#eduPersonPrincipal
+    #but the configuration is in the shibboleth software.
+    
+    shib_error_msg = """
+    Your university identity server did not return your ID information to us.
+    Please try logging in again.  (You may need to restart your browser.)
+    """
+    
+    if not request.META.get('REMOTE_USER'):
+        return default_render_failure(request, shib_error_msg)
+    else:
+        #if we get here, the user has authenticated properly
+        attrs = ['REMOTE_USER', 'givenName', 'sn', 'eppn', 'mail',
+                 'Shib-Identity-Provider' ]
+        shib = {}
+        
+        for attr in attrs:
+            shib[attr] = request.META.get(attr, '')
+
+        #Clean up first name, last name, and email address
+        #TODO: Make this less hardcoded re: format, but split will work
+        #even if ";" is not present since we are accessing 1st element
+        shib['sn'] = shib['sn'].split(";")[0] 
+        shib['givenName'] = shib['givenName'].split(";")[0]
+        if not shib['mail']:
+            shib['mail'] = shib['eppn']
+
+    return external_login_or_signup(request,
+                external_id = shib['REMOTE_USER'],
+                external_domain = "shib:" + shib['Shib-Identity-Provider'],
+                credentials = shib,
+                email = shib['mail'],
+                fullname = "%s %s" % (shib['givenName'], shib['sn']),
+                retfun = retfun)
 
 
 # -----------------------------------------------------------------------------

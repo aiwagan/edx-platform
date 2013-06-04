@@ -337,6 +337,11 @@ if settings.MITX_FEATURES.get('AUTH_USE_OPENID'):
         url(r'^openid/logo.gif$', 'django_openid_auth.views.logo', name='openid-logo'),
     )
 
+if settings.MITX_FEATURES.get('AUTH_USE_SHIB'):
+    urlpatterns += (
+        url(r'^shib-login/$', 'external_auth.views.shib_login', name='shib-login'),
+    )
+
 if settings.MITX_FEATURES.get('AUTH_USE_OPENID_PROVIDER'):
     urlpatterns += (
         url(r'^openid/provider/login/$', 'external_auth.views.provider_login', name='openid-provider-login'),

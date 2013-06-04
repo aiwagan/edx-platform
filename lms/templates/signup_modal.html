@@ -36,7 +36,15 @@
 	  <p><i>Enter a public username:</i></p>
 	  
           <label data-field="username" for="signup_username">Public Username *</label>
-	    <input id="signup_username" type="text" name="username" value="${extauth_username}" placeholder="e.g. yourname (shown on forums)" required />
+	      <input id="signup_username" type="text" name="username" value="${extauth_username}" placeholder="e.g. yourname (shown on forums)" required />
+            
+          % if ask_for_fullname:
+            
+            <label data-field="name" for="signup_fullname">Full Name *</label>
+            <input id="signup_fullname" type="text" name="name" placeholder="e.g. Your Name (for certificates)" required />
+            
+          % endif
+            
 	  % endif
         </div>
 
